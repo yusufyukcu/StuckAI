@@ -1,0 +1,32 @@
+# Core Dependencies
+openai>=1.3.0
+python-dotenv==1.0.0
+tqdm==4.66.1
+requests==2.31.0
+Pillow==10.0.1
+aiohttp==3.9.0
+numpy>=1.24.0
+
+# Modern UI Framework - PyQt6
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+PyQt6-QtSvg>=6.6.0
+
+# Video Kalite Analizi Modülü için gerekli kütüphaneler
+opencv-python>=4.8.0
+openai-whisper>=20231117
+ffmpeg-python>=0.2.0
+
+# Data Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Optional - Stock API Integration
+# Uncomment if you want to use real stock API services
+# unsplash-python>=1.3.0
+# pexels-python>=1.0.0
+# pixabay-python>=1.0.0
+
+# Supabase Authentication
+supabase>=2.0.0
+cryptography>=42.0.0

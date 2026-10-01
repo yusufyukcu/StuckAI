@@ -1,0 +1,43 @@
+# --- Gizli bilgiler (ASLA commit etme) ---
+.env
+*.pem
+*.key
+tls_pin_debug_*.json
+
+# --- Python / sanal ortam ---
+venv/
+.venv/
+Lib/
+Scripts/
+pyvenv.cfg
+__pycache__/
+*.pyc
+
+# --- Build çıktıları ---
+build/
+build_cython/
+tools/build/
+tools/build_cython/
+dist/
+stage/
+*.obj
+*.exp
+*.lib
+
+# --- Harici ikili dosyalar (FFmpeg, 100MB+ DLL'ler) ---
+ffmpeg.exe
+ffplay.exe
+ffprobe.exe
+/*.dll
+
+# --- Kullanıcı / çalışma zamanı verisi ---
+data/
+history/
+downloads/
+thumbnails/
+
+# --- Geçici / yedek dosyalar ---
+ui/main_window_backup.py
+ui/main_window_temp.py
+.claude/
+*.log
