@@ -1,319 +1,280 @@
 # 🎬 StuckAI
 
-**StuckAI**, video içerik üreticileri için geliştirilmiş, yapay zekâ destekli bir **video senaryo / sahne analiz** masaüstü uygulamasıdır. Bir metni (senaryo, seslendirme metni, makale) sahnelere ayırır, her sahne için anahtar kelime, ton ve görsel prompt üretir; ardından stok görsel/video kaynaklarından uygun medyayı bulur ve gerekirse **AI ile görsel üretir**.
+> **AI-powered script & scene analysis desktop app for video creators — built with a defense-in-depth client security architecture.**
 
-Uygulama yalnızca bir AI aracı değil, aynı zamanda **çok katmanlı bir istemci güvenliği (client-side hardening)** çalışmasıdır: kod bütünlüğü doğrulama, TLS sertifika sabitleme (pinning), tekrar saldırısına (replay) karşı korumalı RPC çağrıları, uzaktan kill-switch, Cython ile derlenmiş kritik modüller ve daha fazlası.
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D6)](#-installation)
+[![Python](https://img.shields.io/badge/python-3.10-3776AB)](#-tech-stack)
+[![UI](https://img.shields.io/badge/UI-PyQt6-41CD52)](#-tech-stack)
+[![Backend](https://img.shields.io/badge/backend-Supabase-3ECF8E)](#-tech-stack)
+[![Security](https://img.shields.io/badge/security-defense--in--depth-critical)](SECURITY.md)
 
-> Platform: **Windows 10/11 (x64)** · Dil: **Python 3.10** · Arayüz: **PyQt6** · Backend: **Supabase**
-
----
-
-## 📑 İçindekiler
-
-- [Özellikler](#-özellikler)
-- [Mimari](#-mimari)
-- [Siber Güvenlik Mimarisi](#-siber-güvenlik-mimarisi)
-- [Proje Yapısı](#-proje-yapısı)
-- [Kurulum](#-kurulum)
-- [Derleme ve Dağıtım](#-derleme-ve-dağıtım)
-- [Teknolojiler](#-teknolojiler)
+🇹🇷 Türkçe dokümantasyon: [README.tr.md](README.tr.md) · 🔐 Full security write-up: [SECURITY.md](SECURITY.md)
 
 ---
 
-## ✨ Özellikler
+## 📑 Table of Contents
 
-### 🧠 Akıllı Sahne Analizi
-- Girilen metni otomatik olarak **ana bölümler ve alt sahneler** halinde böler.
-- Her sahne için **başlık, özet, anahtar kelimeler, ton (duygu)** ve **görsel prompt** üretir.
-- "Smart scene analysis" ile sahneye en uygun medya tipini (görsel / video) belirler.
-- Karakter limiti, plan tipi ve kredi kontrolü sunucu tarafında doğrulanır.
-
-### 🖼️ Medya Bulma ve Üretme
-- Stok görsel ve video servislerinden sahneye uygun içerikleri listeler.
-- **AI görsel üretimi** (farklı en-boy oranlarıyla: 1:1, 16:9, 9:16 …).
-- Video önizleme, oynatma ve kalite seçimi (FFmpeg tabanlı).
-- Arka planda **lazy loading** ve thumbnail üretimi ile akıcı arayüz.
-
-### ⬇️ İndirme Yöneticisi
-- Seçilen medyaları toplu ya da tek tek indirme.
-- İndirme geçmişi, thumbnail önizlemeleri ve dosya adı temizleme.
-
-### 🕘 Geçmiş ve Hesap
-- Geçmiş analizleri kaydetme ve tekrar açma.
-- Supabase ile **kayıt / giriş**, profil, plan (Free / Premium) ve kredi sistemi.
-- Cihaz kısıtlaması (bir hesabın izinsiz çoklu cihazda kullanımına karşı).
-
-### 🎨 Modern Arayüz
-- PyQt6 ile tamamen özel tasarlanmış, animasyonlu modern UI.
-- Sürükle-bırak dosya yükleme, animasyonlu istatistik kartları, sidebar navigasyonu.
-- Bakım, güncelleme zorunluluğu ve internet bağlantısı hata diyalogları.
+- [What is StuckAI?](#-what-is-stuckai)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Security at a Glance](#-security-at-a-glance)
+- [Project Structure](#-project-structure)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Build & Release Pipeline](#-build--release-pipeline)
+- [Tech Stack](#-tech-stack)
+- [Note on Compiled Modules](#-note-on-compiled-modules)
+- [Author](#-author)
 
 ---
 
-## 🏗️ Mimari
+## 🧠 What is StuckAI?
+
+StuckAI takes a piece of text — a video script, a voice-over transcript, a blog article — and turns it into a **shot list**. It:
+
+1. **Splits the text into main sections and sub-scenes**,
+2. Generates a **title, summary, keywords, emotional tone and a visual prompt** for every scene,
+3. Searches **stock image / stock video providers** for matching media,
+4. Optionally **generates images with AI** when stock footage is not good enough,
+5. Lets the user preview, pick and **download** everything in one place.
+
+The result: a creator goes from "I have a script" to "I have the B-roll for every sentence" in minutes instead of hours.
+
+StuckAI is a commercial, credit-based product (Free / Premium plans). Because it is distributed as a desktop binary onto machines the developer does not control, the project is also an exercise in **client-side hardening**: code-integrity verification, TLS public-key pinning, anti-replay RPCs, a remote kill-switch, build allowlisting and native compilation of business logic. These are summarised [below](#-security-at-a-glance) and documented in depth in [SECURITY.md](SECURITY.md).
+
+---
+
+## ✨ Features
+
+### Smart scene analysis
+- Automatic segmentation of long text into **sections → scenes**.
+- Per-scene **title, summary, keywords, tone/emotion and image prompt**.
+- "Smart scene analysis" decides whether a scene is better served by an **image or a video clip**.
+- Character limits, plan type and credit balance are **validated on the server**, not in the client.
+
+### Media discovery & generation
+- Aggregated search across multiple stock image and stock video APIs.
+- **AI image generation** with selectable aspect ratios (1:1, 16:9, 9:16, …).
+- In-app video preview, playback and quality selection (FFmpeg-based).
+- Background **lazy loading** and thumbnail generation keep the UI responsive.
+
+### Download manager
+- Single or bulk downloads with progress tracking.
+- Download history, thumbnail previews and safe filename sanitisation.
+
+### History & account
+- Save and reopen previous analyses.
+- Supabase-backed **sign-up / sign-in**, profile, plan (Free / Premium) and credit system.
+- **Device binding** to prevent unauthorised multi-device account sharing.
+
+### Modern UI
+- Fully custom, animated PyQt6 interface (sidebar navigation, animated stat cards, drag-and-drop file input).
+- Dedicated dialogs for **maintenance mode**, **forced update** and **no-connection** states.
+
+---
+
+## 🏗️ Architecture
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│                     StuckAI (PyQt6 UI)                     │
-│  ui/main_window.py · login_window.py · dialoglar · thread'ler│
-└───────────────┬────────────────────────────────────────────┘
-                │
-┌───────────────▼────────────────────────────────────────────┐
-│           logic/  (iş mantığı — Cython ile derlenmiş)      │
-│  scene_analysis · smart_scene_analysis · video_analysis    │
-│  stock_api_service · leonardo_ai_service · cost_tracking   │
-│  supabase_auth · session_token_service · api_key_service   │
-└───────────────┬────────────────────────────────────────────┘
-                │
-┌───────────────▼────────────────────────────────────────────┐
-│     security/  (bütünlük doğrulama — Cython ile derlenmiş) │
-│  bootstrap · integrity_manifest · integrity_hash           │
-└───────────────┬────────────────────────────────────────────┘
-                │  HTTPS (SPKI pinned)
-┌───────────────▼────────────────────────────────────────────┐
-│  Supabase: Auth · PostgREST · RLS · SECURITY DEFINER RPC'ler│
-│  (kredi düşümü, oturum token'ı, bakım modu, build allowlist)│
-└────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                       StuckAI (PyQt6 UI)                       │
+│   ui/main_window.py · login_window.py · dialogs · QThreads     │
+└────────────────┬───────────────────────────────────────────────┘
+                 │
+┌────────────────▼───────────────────────────────────────────────┐
+│        logic/   business logic  (Cython-compiled .pyd)         │
+│   scene_analysis · smart_scene_analysis · video_analysis       │
+│   stock_api_service · leonardo_ai_service · cost_tracking      │
+│   supabase_auth · session_token_service · api_key_service      │
+└────────────────┬───────────────────────────────────────────────┘
+                 │
+┌────────────────▼───────────────────────────────────────────────┐
+│        security/   integrity verification  (Cython .pyd)       │
+│   bootstrap · integrity_manifest · integrity_hash              │
+└────────────────┬───────────────────────────────────────────────┘
+                 │   HTTPS  +  SPKI public-key pinning
+┌────────────────▼───────────────────────────────────────────────┐
+│  Supabase:  Auth · PostgREST · Row Level Security              │
+│             SECURITY DEFINER RPCs (credits, session tokens,    │
+│             maintenance flag, build allowlist, API key broker) │
+└────────────────────────────────────────────────────────────────┘
 ```
+
+**Design principle:** the client is treated as *untrusted*. Anything that has monetary value — credits, plan limits, API keys — lives on the server and is only reachable through authenticated, authorised, replay-protected RPCs. The client-side protections raise the cost of tampering; the server-side checks are what actually enforce the rules.
 
 ---
 
-## 🔐 Siber Güvenlik Mimarisi
+## 🔐 Security at a Glance
 
-StuckAI, istemci tarafında çalışan ve kullanıcının bilgisayarına dağıtılan bir uygulama olduğu için **"istemciye güvenme" (never trust the client)** prensibiyle tasarlandı. Güvenlik, birbirini tamamlayan katmanlar halinde uygulanır (**defense-in-depth**) ve hata durumunda uygulama **fail-closed** davranır — yani bir kontrol yapılamıyorsa uygulama *açılmaz*.
-
-### Başlangıç zinciri (`app.py`)
-
-Uygulama arayüzü açılmadan önce aşağıdaki kontroller sırayla çalışır; herhangi biri başarısız olursa süreç sonlandırılır:
+Before a single window is drawn, `app.py` runs a **fail-closed startup chain** — if any step cannot be completed, the process exits:
 
 ```
-1. Subprocess yaması        → konsol pencerelerini gizle
-2. Log redaksiyonu          → hassas URL/sağlayıcı adlarını maskele
-3. Bütünlük kontrolü        → imzalı manifest + SHA-256 doğrulama   (fail-closed)
-4. Bakım kill-switch'i      → uzaktan bakım modu kontrolü           (fail-closed)
-5. Build guard              → TLS pin + build allowlist             (fail-closed)
-6. UI başlatılır
+1. Subprocess patch     → hide console windows of child processes (FFmpeg, etc.)
+2. Log redaction        → mask provider names / URLs in all printed output
+3. Integrity check      → signed manifest + SHA-256 of every shipped file   (fail-closed)
+4. Maintenance switch   → remote "stop everything" flag                    (fail-closed)
+5. Build guard          → TLS SPKI pin + build-ID allowlist                (fail-closed)
+6. UI starts
 ```
 
-### 1. 🧾 Kod Bütünlüğü Doğrulama (Code Integrity / Anti-Tamper)
+| # | Control | What it defends against |
+|---|---------|-------------------------|
+| 1 | **Signed integrity manifest** (RSA/ECDSA + SHA-256, key IDs, periodic re-check) | Cracked / patched binaries, swapped DLLs, runtime tampering |
+| 2 | **TLS SPKI pinning** | Man-in-the-middle, intercepting proxies (Burp, Fiddler, mitmproxy), rogue root CAs |
+| 3 | **Build allowlist + forced update** | Old, leaked or modified builds staying in circulation |
+| 4 | **Remote maintenance kill-switch** | Zero-day in the field — every client can be stopped instantly |
+| 5 | **Anti-replay secure RPC** (short-lived token, nonce, timestamp, build ID, device fingerprint) | Replaying captured requests to farm credits, token theft |
+| 6 | **Server-side credit logic + Row Level Security** | Editing local values/memory to get free usage, reading other users' data |
+| 7 | **Device fingerprinting** (hashed, never raw) | Account sharing across many machines |
+| 8 | **Cython native compilation + symbol stripping** | Reading or trivially modifying business logic |
+| 9 | **Log redaction** | Infrastructure details leaking through logs or screenshots |
+| 10 | **Server-brokered API keys** | Third-party API keys being extracted from the binary |
+| 11 | **Least-privilege installer ACLs** | Users / malware writing into the program directory |
 
-`security/bootstrap`, `security/integrity_manifest`, `security/integrity_hash`, `tools/make_integrity_manifest.py`
-
-- Dağıtılan her kritik dosyanın (`.exe`, `.pyd`, `.dll`, `app.py` …) **SHA-256 özeti** bir manifest dosyasında (`files.json`) tutulur.
-- Manifest, geliştiricinin **özel anahtarıyla dijital olarak imzalanır** (RSA PKCS#1 v1.5 + SHA-256 veya ECDSA P-256 + SHA-256).
-- İmza, `signature` alanı hariç tutulmuş **kanonik JSON** (`sort_keys=True`, `separators=(",", ":")`) üzerinden hesaplanır; böylece alan sırası değişse bile imza deterministik kalır.
-- Her imza bir **key id (`kid`)** taşır → anahtar rotasyonu (key rotation) desteklenir; istemci yalnızca `INTEGRITY_PUBKEYS_JSON` içindeki güvenilen açık anahtarları kabul eder.
-- Manifest uzaktan (`INTEGRITY_MANIFEST_URL`) indirilir, yerelde önbelleklenir ve önbelleğin yaşı sınırlandırılır.
-- Dosya özetleri **paralel** hesaplanır (`INTEGRITY_MAX_PARALLEL_HASH`), sonuçlar önbelleklenir.
-- **Periyodik yeniden doğrulama:** Kritik RPC çağrılarından önce `ensure_integrity_before_critical(max_age_seconds=300)` çalışır; son kontrol 5 dakikadan eskiyse bütünlük tekrar doğrulanır (runtime tamper'a karşı).
-- **Devre dışı bırakılamaz:** `DISABLE_INTEGRITY` ortam değişkeni ve `disable_integrity` dosyası gibi bypass yolları bilinçli olarak yok sayılır; production build'lerde manifest sistemi kalıcı olarak açıktır.
-
-### 2. 📌 TLS Sertifika Sabitleme (SPKI Pinning)
-
-`logic/build_guard`, `debug_tls_pins.py`
-
-- Backend'e bağlanırken sunucunun yaprak sertifikasının **SubjectPublicKeyInfo (SPKI)** alanının SHA-256 özeti hesaplanır ve uygulamaya gömülü beklenen pin ile karşılaştırılır.
-- Sertifikanın tamamı yerine **açık anahtar** sabitlendiği için sertifika yenilemelerinde (aynı anahtar korunduğu sürece) pin bozulmaz.
-- Pin uyuşmazlığında `SECURITY ALERT: TLS Pin mismatch` ile uygulama başlatılmaz → **MITM (Man-in-the-Middle)**, sahte kök sertifika ve proxy ile trafik dinleme (Burp/Fiddler vb.) saldırıları engellenir.
-- `debug_tls_pins.py` aracı, sertifika değişimlerinde yeni pin değerini doğru hesaplamak için kullanılır.
-
-### 3. 🚦 Build Allowlist ve Uzaktan Kill-Switch
-
-`logic/build_guard`, `logic/maintenance_guard`
-
-- Her derlemenin benzersiz bir `BUILD_ID`'si vardır. Uygulama açılışta sunucudaki **izinli build listesini (allowlist)** kontrol eder; listede olmayan (eski, sızdırılmış veya kurcalanmış) sürümler çalışmaz ve kullanıcıya **güncelleme zorunlu** diyaloğu gösterilir.
-- **Bakım modu kill-switch'i:** Supabase REST üzerinden okunan bir bayrak ile tüm istemciler anında bakım moduna alınabilir (`MaintenanceDialog`). Bir güvenlik açığı tespit edildiğinde tüm kullanıcıları uzaktan durdurma imkânı sağlar.
-- İnternet yoksa veya kontrol yapılamazsa uygulama **fail-closed** davranır.
-
-### 4. 🔁 Replay Korumalı Güvenli RPC (Anti-Replay)
-
-`logic/supabase_auth.py` → `secure_rpc()`, `logic/session_token_service`
-
-Kredi düşümü, AI görsel üretimi gibi **kritik işlemler** doğrudan tablo erişimiyle değil, sunucu tarafında doğrulanan RPC fonksiyonları üzerinden yapılır. Her çağrıya otomatik olarak şunlar eklenir:
-
-| Parametre   | Amaç |
-|-------------|------|
-| `p_token`   | **Kısa ömürlü (≤ 15 dk) oturum token'ı** — sunucudan `issue_session_token` RPC'si ile alınır, bellekte tutulur, süresi dolunca şeffaf şekilde yenilenir |
-| `p_build_id`| İsteği yapan build'in allowlist'te olduğunun sunucu tarafında doğrulanması |
-| `p_fp`      | Cihaz parmak izi — token'ın başka bir cihazda kullanılmasını engeller |
-| `p_nonce`   | Tek kullanımlık rastgele değer — **aynı isteğin tekrar gönderilmesini (replay)** engeller |
-| `p_ts`      | Milisaniye zaman damgası — eski/geciktirilmiş isteklerin reddedilmesi |
-
-- PostgREST çağrıları her zaman kullanıcının **JWT**'si ile yapılır; Row Level Security (RLS) politikaları kullanıcının yalnızca kendi verisine erişmesini sağlar.
-- Token alınamazsa veya JWT yoksa çağrı yapılmaz (**fail-closed**: `auth_required`, `auth_jwt_missing`).
-- Kritik RPC'den önce bütünlük yeniden doğrulanır; başarısızsa `integrity_failed` döner.
-- Kredi/limit hesaplaması istemcide değil **sunucuda** yapılır; istemci tarafı değerleri değiştirmek bir avantaj sağlamaz.
-
-### 5. 🖥️ Cihaz Parmak İzi (Device Fingerprinting)
-
-`logic/utils.py` → `generate_device_fingerprint()`
-
-- Windows `MachineGuid`, disk birim seri numarası, MAC adresi, işlemci/mimari ve OS bilgileri birleştirilerek **SHA-256** ile kararlı bir cihaz kimliği üretilir.
-- Ham donanım bilgisi sunucuya gönderilmez; yalnızca hash gönderilir (gizlilik).
-- Hesap paylaşımı ve izinsiz çoklu cihaz kullanımına karşı **cihaz kısıtlaması** uygulanır.
-
-### 6. 🧱 Tersine Mühendisliğe Karşı Sertleştirme (Anti-Reverse Engineering)
-
-`tools/build_logic_cython.py`
-
-- `logic/` ve `security/` paketlerindeki tüm iş mantığı **Cython ile native C eklentilerine (`.pyd`)** derlenir; dağıtımda `.py` kaynak kodu bulunmaz.
-- Agresif optimizasyon (`/O2 /Ob2`, `-O3 -fvisibility=hidden`), `embedsignature=False`, `emit_code_comments=False`, `binding=False` ile fonksiyon imzaları ve yorumlar binary'den çıkarılır.
-- Derleme sonrası üretilen `.c` dosyaları silinir, sembol tabloları `strip` ile temizlenir.
-- Linker'da `/OPT:REF /OPT:ICF` ile kullanılmayan kod atılır.
-- Derlenmiş modüller ayrıca bütünlük manifestine dahil olduğu için **binary patch'leme** tespit edilir.
-
-### 7. 🙈 Hassas Bilgi Redaksiyonu (Log Redaction)
-
-`logic/redaction`
-
-- Global `print` fonksiyonu sarmalanır; konsol/log çıktısındaki **API sağlayıcı adları ve URL'ler otomatik olarak maskelenir**.
-- Böylece log dosyalarından ya da ekran görüntülerinden altyapı bilgisi sızdırılamaz.
-
-### 8. 🔑 Gizli Anahtar Yönetimi (Secret Management)
-
-`logic/api_key_service`, `.env`
-
-- Üçüncü parti API anahtarları (AI, stok medya servisleri) **istemciye gömülmez**; yetkili kullanıcı oturumuyla sunucudan alınır.
-- İstemcide yalnızca **public** Supabase anon key bulunur; gerçek yetkilendirme RLS ve RPC kontrolleriyle sunucuda yapılır.
-- `.env`, imzalama anahtarı (`private.pem`) ve diğer gizli dosyalar `.gitignore` ile repodan hariç tutulur.
-
-### 9. 🪟 Windows Süreç Sertleştirme
-
-`logic/windows_subprocess.py`
-
-- `subprocess` çağrıları global olarak yamalanır (`CREATE_NO_WINDOW`), FFmpeg vb. alt süreçlerin konsol penceresi açması ve kullanıcıya iç komutları göstermesi engellenir.
-- Kurulum (Inno Setup) sırasında yalnızca gerekli klasörlere (`data`, `downloads`, `history`) kullanıcı yazma izni verilir; uygulama dosyaları `Program Files` altında korunur.
-
-### Tehdit Modeli Özeti
-
-| Tehdit | Önlem |
-|---|---|
-| Uygulama dosyalarının değiştirilmesi / crack | İmzalı SHA-256 manifest, periyodik yeniden doğrulama, fail-closed |
-| MITM / trafik dinleme / proxy | TLS SPKI pinning |
-| Eski veya sızdırılmış build kullanımı | Build allowlist + zorunlu güncelleme |
-| Kritik açık tespiti | Uzaktan bakım kill-switch'i |
-| İstek tekrarlama (replay) ile kredi suistimali | Nonce + timestamp + kısa ömürlü token |
-| Token çalınması | Cihaz parmak izine bağlı token, ≤ 15 dk ömür |
-| Kaynak kod / iş mantığı sızdırma | Cython native derleme + strip |
-| İstemci tarafı kredi manipülasyonu | Sunucu tarafı RPC + RLS |
-| Log üzerinden bilgi sızıntısı | Otomatik redaksiyon |
-| Hesap paylaşımı | Cihaz kısıtlaması |
+👉 Every control — how it works, why it was chosen, threat model, and known limitations — is explained in **[SECURITY.md](SECURITY.md)**.
 
 ---
 
-## 📁 Proje Yapısı
+## 📁 Project Structure
 
 ```
 StuckAI/
-├── app.py                      # Giriş noktası + güvenlik başlangıç zinciri
-├── StuckAI.spec                # PyInstaller yapılandırması
-├── files.json                  # İmzalı bütünlük manifesti
+├── app.py                        # Entry point + security startup chain
+├── StuckAI.spec                  # PyInstaller configuration
+├── files.json                    # Signed integrity manifest
 ├── requirements.txt
-├── run.bat                     # Windows başlatıcı
-├── install.py                  # Kurulum yardımcısı
-├── .env.example                # Ortam değişkeni şablonu
+├── run.bat                       # Windows launcher
+├── install.py                    # Setup helper (creates .env, checks deps)
+├── .env.example                  # Environment variable template
 │
-├── ui/                         # PyQt6 arayüzü
-│   ├── main_window.py          # Ana pencere, sayfalar, medya kartları
-│   ├── login_window.py         # Giriş / kayıt ekranı
-│   ├── maintenance_dialog.py   # Bakım modu diyaloğu
-│   ├── update_required_dialog.py
-│   ├── wifi_error_dialog.py
-│   ├── download_thread.py, smart_analysis_thread.py
-│   └── assets/                 # İkonlar, logolar, animasyonlar
+├── ui/                           # PyQt6 interface
+│   ├── main_window.py            # Main window, pages, media cards
+│   ├── login_window.py           # Sign-in / sign-up screen
+│   ├── maintenance_dialog.py     # Maintenance-mode dialog
+│   ├── update_required_dialog.py # Forced-update dialog (build not allowlisted)
+│   ├── wifi_error_dialog.py      # No-connection dialog
+│   ├── download_thread.py        # Background downloads
+│   ├── smart_analysis_thread.py  # Background analysis
+│   └── assets/                   # Icons, logos, animations
 │
-├── logic/                      # İş mantığı (çoğu Cython .pyd)
-│   ├── supabase_auth.py        # Kimlik doğrulama + secure_rpc
-│   ├── session_token_service   # Kısa ömürlü oturum token'ları
-│   ├── build_guard             # TLS pinning + build allowlist
-│   ├── maintenance_guard       # Uzaktan kill-switch
-│   ├── redaction               # Log redaksiyonu
-│   ├── api_key_service         # Sunucu taraflı anahtar yönetimi
+├── logic/                        # Business logic (mostly Cython .pyd)
+│   ├── supabase_auth.py          # Auth + secure_rpc()
+│   ├── session_token_service     # Short-lived session tokens
+│   ├── build_guard               # TLS pinning + build allowlist
+│   ├── maintenance_guard         # Remote kill-switch
+│   ├── redaction                 # Output redaction
+│   ├── api_key_service           # Server-brokered API keys
 │   ├── scene_analysis / smart_scene_analysis / video_analysis
 │   ├── stock_api_service / leonardo_ai_service
 │   ├── cost_tracking_service / scene_cost_tracking_service
-│   ├── utils.py                # Cihaz parmak izi, nonce, yardımcılar
-│   └── windows_subprocess.py   # Gizli subprocess yaması
+│   ├── utils.py                  # Device fingerprint, nonce, helpers
+│   └── windows_subprocess.py     # Hidden-console subprocess patch
 │
-├── security/                   # Bütünlük doğrulama (Cython .pyd)
-│   ├── bootstrap               # Başlangıç & periyodik kontrol
-│   ├── integrity_manifest      # Manifest indirme, imza doğrulama
-│   └── integrity_hash          # Paralel SHA-256 doğrulama
+├── security/                     # Integrity verification (Cython .pyd)
+│   ├── bootstrap                 # Startup & periodic checks
+│   ├── integrity_manifest        # Manifest download + signature verification
+│   └── integrity_hash            # Parallel SHA-256 hashing
 │
 ├── tools/
-│   ├── build_logic_cython.py   # Cython derleme + strip + staging
-│   └── make_integrity_manifest.py  # Manifest üretme ve imzalama
+│   ├── build_logic_cython.py     # Cython build + strip + source-free staging
+│   └── make_integrity_manifest.py# Manifest generation & signing
 │
-├── installer/StuckAI.iss       # Inno Setup kurulum betiği
-└── fonts/                      # Poppins, Inter
+├── debug_tls_pins.py             # Computes the SPKI pin of a live host
+├── installer/StuckAI.iss         # Inno Setup installer script
+└── fonts/                        # Poppins, Inter
 ```
 
 ---
 
-## 🚀 Kurulum
+## 🚀 Installation
 
-> Not: Uygulama çalışmak için yapılandırılmış bir Supabase backend'ine ve imzalı bütünlük manifestine ihtiyaç duyar (fail-closed tasarım).
+> ⚠️ StuckAI is **fail-closed by design**: it will not start without a configured Supabase backend (with the required RPCs / tables), a matching TLS pin and a valid signed integrity manifest. Cloning the repo alone is not enough to run the full product.
+
+**Requirements:** Windows 10/11 x64, Python 3.10, FFmpeg binaries.
 
 ```powershell
-git clone https://github.com/<kullanici-adi>/StuckAI.git
+git clone https://github.com/<your-username>/StuckAI.git
 cd StuckAI
 
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 
-copy .env.example .env      # değerleri doldurun
+copy .env.example .env      # then fill in the values
 ```
 
-FFmpeg ikili dosyalarını (`ffmpeg.exe`, `ffprobe.exe` ve DLL'ler) proje köküne koyun ([ffmpeg.org](https://ffmpeg.org/download.html)), ardından:
+Place the FFmpeg binaries (`ffmpeg.exe`, `ffprobe.exe` and their DLLs) in the project root — they are intentionally not committed because of their size. Download them from [ffmpeg.org](https://ffmpeg.org/download.html).
 
 ```powershell
 run.bat
-# veya
+# or
 python app.py
 ```
 
 ---
 
-## 📦 Derleme ve Dağıtım
+## ⚙️ Configuration
+
+| Variable | Description |
+|---|---|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase **anon (public)** key — safe to ship; RLS enforces access |
+| `APP_BASE_URL` | Base URL of the companion web app (account / billing pages) |
+| `INTEGRITY_MANIFEST_URL` | Where the signed `files.json` is downloaded from |
+| `INTEGRITY_PUBKEYS_JSON` | JSON map of trusted public keys by key ID, e.g. `{"k1": "-----BEGIN PUBLIC KEY-----..."}` |
+| `INTEGRITY_PERIODIC_MINUTES` | Interval for background integrity re-verification |
+
+Never commit `.env` or any private key — both are covered by `.gitignore`.
+
+---
+
+## 📦 Build & Release Pipeline
 
 ```powershell
-# 1) Kritik modülleri Cython ile derle (kaynak kodsuz staging ağacı)
+# 1) Compile critical packages to native extensions and produce a source-free staging tree
 py tools\build_logic_cython.py --out build_cython --stage-out stage
 
-# 2) İmzalama anahtarı üret (bir kez)
+# 2) Create a signing key pair (once, on the build machine only)
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out private.pem
 openssl rsa -in private.pem -pubout -out public.pem
 
-# 3) Bütünlük manifestini oluştur ve imzala
+# 3) Hash every shipped file and sign the manifest
 python tools\make_integrity_manifest.py --root . --kid k1 --private-key .\private.pem --output .\files.json
 
-# 4) Tek dosya exe
+# 4) Bundle into a single executable
 pyinstaller StuckAI.spec
 
-# 5) Windows kurulum paketi
+# 5) Build the Windows installer
 iscc installer\StuckAI.iss
 ```
 
-⚠️ `private.pem` asla repoya eklenmemeli; yalnızca derleme makinesinde tutulmalıdır.
+After a release, the new `BUILD_ID` is added to the server-side allowlist and old/compromised IDs can be removed, which forces their users onto the update dialog.
+
+> 🔑 `private.pem` must **never** leave the build machine. If it leaks, rotate to a new key ID (`k2`), ship the new public key, and remove `k1` from `INTEGRITY_PUBKEYS_JSON`.
 
 ---
 
-## 🛠️ Teknolojiler
+## 🛠️ Tech Stack
 
-| Alan | Teknoloji |
+| Area | Technology |
 |---|---|
-| Arayüz | PyQt6, PyQt6-QtSvg |
-| Backend / Auth | Supabase (Auth, PostgREST, RLS, RPC) |
+| UI | PyQt6, PyQt6-QtSvg |
+| Backend / Auth | Supabase (Auth, PostgREST, Row Level Security, RPC) |
 | AI | OpenAI, Leonardo AI, Whisper |
-| Medya | FFmpeg, OpenCV, Pillow |
-| Kriptografi | `cryptography` (RSA / ECDSA / SHA-256), SPKI pinning |
-| Derleme | Cython, PyInstaller, Inno Setup |
+| Media | FFmpeg, OpenCV, Pillow |
+| Cryptography | `cryptography` (RSA / ECDSA / SHA-256), SPKI pinning |
+| Build / Distribution | Cython, PyInstaller, Inno Setup |
 
 ---
 
-## 👤 Geliştirici
+## 🧩 Note on Compiled Modules
+
+Most modules in `logic/` and `security/` are committed as **compiled `.pyd` extensions** (CPython 3.10, Windows x64) rather than Python source. This is deliberate: it is the same artefact that ships to users, and keeping the proprietary analysis logic and security internals out of the public tree is part of the hardening strategy. The open `.py` files (`supabase_auth.py`, `utils.py`, `windows_subprocess.py`, the UI and tooling) show how the compiled modules are wired together.
+
+---
+
+## 👤 Author
 
 **Yusuf Eren Yükcü**
 
-© 2025 StuckAI — Tüm hakları saklıdır.
+© 2025 StuckAI — All rights reserved. This repository is published for portfolio and review purposes; no license to use, copy or redistribute the software is granted.
